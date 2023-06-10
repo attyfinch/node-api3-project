@@ -1,5 +1,5 @@
 const express = require('express');
-const { validateUserId } = require('../middleware/middleware')
+const { validateUserId, validateUser } = require('../middleware/middleware')
 
 // You will need `users-model.js` and `posts-model.js` both
 // The middleware functions also need to be required
@@ -29,45 +29,45 @@ router.get('/:id', validateUserId, async (req, res, next) => {
   res.status(200).json(req.user)
 });
 
-router.post('/', async (req, res) => {
-  
+router.post('/', validateUser, (req, res, next) => {
 
+  Users.insert(req.body)
+    .then(user => {
+      res.status(201).json(user)
+    })
+    .catch(next)
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', validateUserId, validateUser, async (req, res, next) => {
   // RETURN THE FRESHLY UPDATED USER OBJECT
   // this needs a middleware to verify user id
   // and another middleware to check that the request body is valid
-});
 
-router.delete('/:id', async (req, res) => {
-  // RETURN THE FRESHLY DELETED USER OBJECT
-  // this needs a middleware to verify user id
-  const { id } = req.params;
-  Users.getById(id)
+  console.log(req.user, req.body)
+
+  await Users.update(req.user.id, req.body)
     .then(user => {
-      const deletedUser = user;
-      Users.remove(id)
-        .then(() => {
-          res.status(200).json(deletedUser);
-        })
-        .catch(defaultError)
+      res.status(200).json(user);
     })
-    .catch(defaultError)
+    .catch(next)
+
 });
 
-router.get('/:id/posts', async (req, res, next) => {
-  // RETURN THE ARRAY OF USER POSTS
-  // this needs a middleware to verify user id
-  const { id } = req.params;
+router.delete('/:id', validateUserId, async (req, res, next) => {
+  Users.remove(req.user.id)
+    .then(() => {
+      res.status(200).json(req.user);
+    })
+    .catch(next)
+});
 
+router.get('/:id/posts', validateUserId, async (req, res, next) => {
   try {
-    const posts = await Users.getUserPosts(id);
+    const posts = await Users.getUserPosts(req.user.id);
     res.status(200).json(posts);
-  } catch (defaultError) {
-    next(defaultError);
+  } catch (err) {
+    next(err);
   }
-
 });
 
 router.post('/:id/posts', async (req, res) => {
