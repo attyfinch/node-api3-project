@@ -26,11 +26,8 @@ async function validateUserId (req, res, next) {
 
 async function validateUser(req, res, next) {
   const { name } = req.body;
-
   if (
-    name.length > 2 &&
-    name !== undefined &&
-    typeof name === 'string'
+    name !== undefined || name === null
   ) {
     next();
   } else {
@@ -40,15 +37,13 @@ async function validateUser(req, res, next) {
 }
 
 function validatePost(req, res, next) {
-  // DO YOUR MAGIC
+  const { text } = req.body;
+  if (text) {
+    next();
+  } else {
+    next(res.status(400).json({message: "missing required text field"}))
+  }
 }
-
-function defaultError(error, req, res, next) {
-  res.status(error.status || 500).json({
-    message: error.message,
-    customMessage: "Gahhh! Something broke the users-router"
-  })
-};
 
 // do not forget to expose these functions to other modules
 
